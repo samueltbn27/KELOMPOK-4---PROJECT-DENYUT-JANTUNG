@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Monitoring Detak Jantung</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 30px;
+            background: #f4f4f4;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 450px;
+            margin: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        #bpmValue {
+            font-size: 50px;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #d62828;
+        }
+
+        #waktu {
+            font-size: 14px;
+            color: gray;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>Monitoring Detak Jantung (Real-time)</h2>
+
+        <!-- Grafik -->
+        <canvas id="bpmChart" width="400" height="200"></canvas>
+
+        <!-- Angka BPM -->
+        <div id="bpmValue">Loading...</div>
+
+        <!-- Waktu -->
+        <div>Waktu: <span id="waktu">Loading...</span></div>
+    </div>
+
+    <script>
+        // Grafik line Chart.js
+        let ctx = document.getElementById('bpmChart').getContext('2d');
+        let bpmData = [];
+        let labelData = [];
+
+        let bpmChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labelData,
+                datasets: [{
+                    label: 'BPM',
+                    data: bpmData,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                animation: false,
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Load data dari server
+        function loadData() {
+            fetch("http://localhost:5000/data")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status !== "NO DATA") {
+                        // Update angka BPM
+                        document.getElementById("bpmValue").innerText = data.bpm;
+                        document.getElementById("waktu").innerText     = data.waktu;
+
+                        // Tambah data ke grafik
+                        let waktuNow = data.waktu.split(" ")[1]; // hanya jam
+
+                        bpmData.push(data.bpm);
+                        labelData.push(waktuNow);
+
+                        // Maksimal 20 data biar grafik tidak kepanjangan
+                        if (bpmData.length > 20) {
+                            bpmData.shift();
+                            labelData.shift();
+                        }
+
+                        bpmChart.update();
+                    }
+                })
+                .catch(err => console.log("Error:", err));
+        }
+
+        setInterval(loadData, 1000);
+        loadData();
+    </script>
+
+</body>
+</html>
