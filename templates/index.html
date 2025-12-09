@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -30,6 +30,12 @@
             color: #d62828;
         }
 
+        #notif {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
         #waktu {
             font-size: 14px;
             color: gray;
@@ -47,6 +53,9 @@
 
         <!-- Angka BPM -->
         <div id="bpmValue">Loading...</div>
+
+        <!-- Notifikasi -->
+        <div id="notif">-</div>
 
         <!-- Waktu -->
         <div>Waktu: <span id="waktu">Loading...</span></div>
@@ -83,17 +92,32 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.status !== "NO DATA") {
-                        // Update angka BPM
+
+                        // Update BPM
                         document.getElementById("bpmValue").innerText = data.bpm;
                         document.getElementById("waktu").innerText     = data.waktu;
 
-                        // Tambah data ke grafik
-                        let waktuNow = data.waktu.split(" ")[1]; // hanya jam
+                        // ====== LOGIKA NOTIFIKASI ======
+                        let notif = document.getElementById("notif");
+                        let bpm = data.bpm;
 
-                        bpmData.push(data.bpm);
+                        if (bpm >= 110 && bpm <= 150) {
+                            notif.innerText = "🔥 ANDA PANIK!";
+                            notif.style.color = "red";
+                        } else if (bpm >= 90 && bpm <= 109) {
+                            notif.innerText = "🟢 Santai";
+                            notif.style.color = "green";
+                        } else {
+                            notif.innerText = "-";
+                            notif.style.color = "black";
+                        }
+
+                        // Grafik data
+                        let waktuNow = data.waktu.split(" ")[1]; 
+
+                        bpmData.push(bpm);
                         labelData.push(waktuNow);
 
-                        // Maksimal 20 data biar grafik tidak kepanjangan
                         if (bpmData.length > 20) {
                             bpmData.shift();
                             labelData.shift();
@@ -111,4 +135,3 @@
 
 </body>
 </html>
-{% comment %} halo {% endcomment %}
