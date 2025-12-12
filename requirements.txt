@@ -1,0 +1,11 @@
+# Requirements untuk Server Flask API
+Flask==2.3.2
+Flask-CORS==4.0.0
+mysql-connector-python==8.0.33
+
+# Requirements untuk Raspberry Pi (sensor_max30102.py)
+# Uncomment jika menjalankan di Raspberry Pi:
+# RPi.GPIO==0.7.1
+# max30102==0.3.1
+# numpy==1.24.3
+# requests==2.31.0
