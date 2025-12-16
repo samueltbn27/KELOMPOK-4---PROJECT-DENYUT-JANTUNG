@@ -48,73 +48,28 @@
             transform: scale(1);
             filter: drop-shadow(0 0 6px rgba(255,0,0,0.25));
         }
-        55% {
-            transform: scale(1.06);
-            filter: drop-shadow(0 0 12px rgba(255,0,0,0.35));
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 450px;
+            margin: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        100% {
-            transform: scale(1);
-            filter: drop-shadow(0 0 5px rgba(255,0,0,0.2));
+
+        #bpmValue {
+            font-size: 50px;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #d62828;
         }
-    }
 
-    /* ⬅️ DEFAULT: DIAM */
-    .heart {
-        animation-name: heartBeatRealistic;
-        animation-timing-function: cubic-bezier(.4,0,.2,1);
-        animation-iteration-count: infinite;
-        animation-duration: 1s;
-        animation-play-state: paused;
-        transition: animation-duration 0.3s ease;
-    }
-
-    .bpm-box {
-        margin-top: 20px;
-        padding: 15px;
-        background: #ffe5e5;
-        border-radius: 15px;
-        color: #b30000;
-        font-size: 28px;
-        font-weight: bold;
-        box-shadow: inset 0 0 10px rgba(255,0,0,0.2);
-    }
-
-    /* Kartu kanan */
-    .right-card {
-        width: 60%;
-        background: white;
-        padding: 30px;
-        border-radius: 25px;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-        margin-bottom: 20px;
-    }
-
-    .notif {
-        margin-top: 20px;
-        padding: 15px;
-        border-radius: 12px;
-        font-weight: bold;
-        text-align: center;
-    }
-
-    .normal {
-        background: #e3ffe3;
-        color: #008000;
-    }
-
-    .cepat {
-        background: #ffe0e0;
-        color: #cc0000;
-    }
-
-    .lemah {
-        background: #fff4d1;
-        color: #a67800;
-    }
-</style>
+        #waktu {
+            font-size: 14px;
+            color: gray;
+        }
+    </style>
 </head>
 
 <body>
@@ -134,7 +89,8 @@
         <h2>Grafik Detak Jantung (Real-Time)</h2>
         <canvas id="bpmChart" height="150"></canvas>
 
-        <div id="notif" class="notif normal">Menunggu data...</div>
+        <!-- Angka BPM -->
+        <div id="bpmValue">Loading...</div>
 
         <div style="margin-top:10px; color:gray;">
             Waktu: <span id="waktu">--:--:--</span>
@@ -168,34 +124,29 @@ let bpmChart = new Chart(ctx, {
             y: {
                 beginAtZero: false
             }
-        }
-    }
-});
+        });
 
-// ===============================
-// LOAD DATA
-// ===============================
-function loadData() {
-    fetch("http://localhost:5000/data")
-        .then(res => res.json())
-        .then(data => {
+        // Load data dari server
+        function loadData() {
+            fetch("http://localhost:5000/data")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status !== "NO DATA") {
+                        // Update angka BPM
+                        document.getElementById("bpmValue").innerText = data.bpm;
+                        document.getElementById("waktu").innerText     = data.waktu;
 
-            let heart = document.getElementById("heartImg");
+                        // Tambah data ke grafik
+                        let waktuNow = data.waktu.split(" ")[1]; // hanya jam
 
-            if (data.status !== "NO DATA") {
+                        bpmData.push(data.bpm);
+                        labelData.push(waktuNow);
 
-                document.getElementById("bpmValue").innerText = data.bpm;
-                document.getElementById("waktu").innerText = data.waktu;
-
-                let waktuNow = data.waktu.split(" ")[1];
-
-                bpmData.push(data.bpm);
-                labelData.push(waktuNow);
-
-                if (bpmData.length > 20) {
-                    bpmData.shift();
-                    labelData.shift();
-                }
+                        // Maksimal 20 data biar grafik tidak kepanjangan
+                        if (bpmData.length > 20) {
+                            bpmData.shift();
+                            labelData.shift();
+                        }
 
                 bpmChart.update();
 
