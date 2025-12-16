@@ -18,7 +18,7 @@
         gap: 40px;
     }
 
-    /* Kartu kiri */
+    /* Kartu kiri: gambar jantung */
     .left-card {
         width: 40%;
         background: white;
@@ -48,49 +48,96 @@
             transform: scale(1);
             filter: drop-shadow(0 0 6px rgba(255,0,0,0.25));
         }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            width: 450px;
-            margin: auto;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        55% {
+            transform: scale(1.06);
+            filter: drop-shadow(0 0 12px rgba(255,0,0,0.35));
         }
-
-        #bpmValue {
-            font-size: 50px;
-            font-weight: bold;
-            margin: 15px 0;
-            color: #d62828;
+        100% {
+            transform: scale(1);
+            filter: drop-shadow(0 0 5px rgba(255,0,0,0.2));
         }
+    }
 
-        #waktu {
-            font-size: 14px;
-            color: gray;
-        }
-    </style>
+    .heart {
+        animation-name: heartBeatRealistic;
+        animation-timing-function: cubic-bezier(.4,0,.2,1);
+        animation-iteration-count: infinite;
+        animation-duration: 1s;
+        transition: animation-duration 0.3s ease;
+    }
+
+    .left-card .bpm-box {
+        margin-top: 20px;
+        padding: 15px;
+        background: #ffe5e5;
+        border-radius: 15px;
+        color: #b30000;
+        font-size: 28px;
+        font-weight: bold;
+        box-shadow: inset 0 0 10px rgba(255,0,0,0.2);
+    }
+
+    /* Kartu kanan */
+    .right-card {
+        width: 60%;
+        background: white;
+        padding: 30px;
+        border-radius: 25px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+        margin: 0 0 20px 0;
+        font-weight: 600;
+    }
+
+    .notif {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 16px;
+        text-align: center;
+    }
+
+    .normal {
+        background: #e3ffe3;
+        color: #008000;
+    }
+
+    .cepat {
+        background: #ffe0e0;
+        color: #cc0000;
+    }
+
+    .lemah {
+        background: #fff4d1;
+        color: #a67800;
+    }
+</style>
+
 </head>
-
 <body>
 
 <div class="container">
 
-    <!-- LEFT -->
+    <!-- LEFT CARD: GAMBAR JANTUNG -->
     <div class="left-card">
         <img src="asset/jantung1.png" alt="Heart Image" class="heart" id="heartImg">
+
         <div class="bpm-box">
             <span id="bpmValue">--</span> BPM
         </div>
     </div>
 
-    <!-- RIGHT -->
+    <!-- RIGHT CARD: GRAFIK BPM -->
     <div class="right-card">
         <h2>Grafik Detak Jantung (Real-Time)</h2>
+        
         <canvas id="bpmChart" height="150"></canvas>
 
-        <!-- Angka BPM -->
-        <div id="bpmValue">Loading...</div>
+        <!-- Notifikasi kondisi -->
+        <div id="notif" class="notif normal">Menunggu data...</div>
 
         <div style="margin-top:10px; color:gray;">
             Waktu: <span id="waktu">--:--:--</span>
@@ -104,6 +151,7 @@ let ctx = document.getElementById('bpmChart').getContext('2d');
 let bpmData = [];
 let labelData = [];
 
+// Chart Config
 let bpmChart = new Chart(ctx, {
     type: 'line',
     data: {
@@ -124,33 +172,35 @@ let bpmChart = new Chart(ctx, {
             y: {
                 beginAtZero: false
             }
-        });
+        }
+    }
+});
 
-        // Load data dari server
-        function loadData() {
-            fetch("http://localhost:5000/data")
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status !== "NO DATA") {
-                        // Update angka BPM
-                        document.getElementById("bpmValue").innerText = data.bpm;
-                        document.getElementById("waktu").innerText     = data.waktu;
+// Load data dari API Python Flask
+function loadData() {
+    fetch("http://localhost:5000/data")
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== "NO DATA") {
 
-                        // Tambah data ke grafik
-                        let waktuNow = data.waktu.split(" ")[1]; // hanya jam
+                document.getElementById("bpmValue").innerText = data.bpm;
+                document.getElementById("waktu").innerText = data.waktu;
 
-                        bpmData.push(data.bpm);
-                        labelData.push(waktuNow);
+                let waktuNow = data.waktu.split(" ")[1];
 
-                        // Maksimal 20 data biar grafik tidak kepanjangan
-                        if (bpmData.length > 20) {
-                            bpmData.shift();
-                            labelData.shift();
-                        }
+                // push data grafik
+                bpmData.push(data.bpm);
+                labelData.push(waktuNow);
+
+                if (bpmData.length > 20) {
+                    bpmData.shift();
+                    labelData.shift();
+                }
 
                 bpmChart.update();
 
-                // ===== GERAK JANTUNG SESUAI BPM =====
+                // === ANIMASI JANTUNG SESUAI BPM ===
+                let heart = document.getElementById("heartImg");
                 let bpm = data.bpm;
 
                 let minDuration = 0.4;
@@ -160,16 +210,15 @@ let bpmChart = new Chart(ctx, {
                 duration = Math.max(minDuration, Math.min(duration, maxDuration));
 
                 heart.style.animationDuration = duration + "s";
-                heart.style.animationPlayState = "running";
 
-                // ===== NOTIF =====
+                // --- NOTIFIKASI KONDISI ---
                 let notif = document.getElementById("notif");
 
-                if (bpm < 60) {
+                if (data.bpm < 60) {
                     notif.className = "notif lemah";
                     notif.innerText = "Detak Jantung Lemah!";
-                }
-                else if (bpm > 100) {
+                } 
+                else if (data.bpm > 100) {
                     notif.className = "notif cepat";
                     notif.innerText = "Detak Jantung Cepat!";
                 }
@@ -177,10 +226,6 @@ let bpmChart = new Chart(ctx, {
                     notif.className = "notif normal";
                     notif.innerText = "Detak Jantung Normal";
                 }
-            } 
-            else {
-                // NO DATA → JANTUNG DIAM
-                heart.style.animationPlayState = "paused";
             }
         })
         .catch(err => console.log("Error:", err));
